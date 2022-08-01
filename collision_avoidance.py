@@ -49,20 +49,22 @@ class CollisionAvoidance():
             
         
         return gx
-            
-    def distance_to_target(self,x):
-        return np.sqrt((x[-2]-x[0])**2 + (x[-1]-x[1])**2)
-        
+                    
     def objective_function(self,x):
         fx = 0
         
-        x[0] = 0
-        x[self.number_of_wp-1] = 150
+        x[0] = 0                        # initial X position
+        x[self.number_of_wp-1] = 150    # final X position
         
-        x[self.number_of_wp] = 0
-        x[2*self.number_of_wp-1] = 150
+        x[self.number_of_wp] = 0        # initial Y position
+        x[2*self.number_of_wp-1] = 150  # final Y position
         
-        f_interp ='quadratic'
+        interpolator ='quadratic'
+        # interpolator = 'cubic'
+        # interpolator = 'slinear'
+        # interpolator = 'zero'
+        
+        
         d = 50
         ns = 1 + (self.number_of_wp + 1) * d         # Number of points along the spline
 
@@ -70,13 +72,15 @@ class CollisionAvoidance():
         x1 = x[0:self.number_of_wp]
         y1 = x[self.number_of_wp:2*self.number_of_wp]
         
+        
         t = np.linspace(0, 1, self.number_of_wp)
         
-        CSx = interp1d(t, x1 ,kind=f_interp, assume_sorted=True)
-        CSy = interp1d(t, y1, kind=f_interp, assume_sorted=True)
+        CSx = interp1d(t, x1 ,kind=interpolator, assume_sorted=True)
+        CSy = interp1d(t, y1, kind=interpolator, assume_sorted=True)
         
         # Coordinates of the discretized path
         s = np.linspace(0, 1, ns)
+        
         Px = CSx(s)
         Py = CSy(s)
        
@@ -86,23 +90,9 @@ class CollisionAvoidance():
         
         gx = self.constr_one(Px,Py)
        
+       
         Cost = L + (1+gx[0:len(L)])
-        """ fx = self.Euclidean_distance(point_one=[x[0],x[1]],point_two=[x[2],x[3]])        
-        fx += self.Euclidean_distance(point_one=[x[-1],x[-2]],point_two=[x[2],x[3]])
-        
-        for i in range(1,self.number_of_wp-2):
-            fx += self.Euclidean_distance(point_one=[x[2*i],x[2*i+1]],point_two=[x[2*i+2],x[2*i+3]])
-        """
-        
-        #const1 = self.violate(self.constr_one(x))
-        # this is static penalty function 
-        # link == > https://www.researchgate.net/profile/Oezguer-Yeniay/publication/228339797_Penalty_Function_Methods_for_Constrained_Optimization_with_Genetic_Algorithms/links/56d1ecda08ae85c8234ade07/Penalty-Function-Methods-for-Constrained-Optimization-with-Genetic-Algorithms.pdf
-        
-        """print("const1",self.constr_one(x))
-        print("<<<<<<<<<<<<")
-        print(self.constr_two(x))"""
-        """print(self.Euclidean_distance(point_one=[x[2],x[3]],point_two=[self.obstacle_x[0],self.obstacle_y[0]]))
-        fx += max(self.constr_one(x))**2+max(self.constr_two(x))**2"""
+       
         return Cost
     
     def run(self):
